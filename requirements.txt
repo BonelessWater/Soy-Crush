@@ -6,3 +6,6 @@ statsmodels
 requests
 xgboost
 scikit-learn
+optuna
+seaborn
+dask
