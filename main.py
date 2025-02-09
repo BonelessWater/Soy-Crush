@@ -58,10 +58,6 @@ def soybean_spread(soybean_spread_csv = "data/soybean_spread.csv"):
 
     return soybean_df
 
-# ================================
-# 2. Retrieve and Aggregate Weather Data from SQLite (Filtered from 2011-01-01 Onward)
-# ================================
-
 def weather_agg(table_name = "data.db"):
 
     # Connect to the database and read weather data
@@ -91,10 +87,6 @@ def weather_agg(table_name = "data.db"):
 
     return weather_agg, weather_numeric_cols
 
-# ================================
-# 3. Apply Rolling Statistics & PCA to Weather Data
-# ================================
-
 def create_features(weather_df, weather_numeric_cols, soybean_df):
     # Compute rolling statistics (7-day mean and standard deviation)
     for col in weather_numeric_cols:
@@ -108,7 +100,7 @@ def create_features(weather_df, weather_numeric_cols, soybean_df):
     # Apply PCA to reduce dimensionality
     pca = PCA(n_components=3)  # Reduce to 3 principal components
     weather_pca = pca.fit_transform(weather_df.drop(columns=['date']))
-    weather_pca_df = pd.DataFrame(weather_pca, columns=['pca1', 'pca2', 'pca3'])
+    weather_pca_df = pd.DataFrame(weather_pca, columns=['pca1', 'pca2', 'pca3', 'pca4', 'pca5', 'pca6', 'pca7'])
     weather_pca_df['date'] = weather_df['date']
 
     # Ensure 'date' column in both DataFrames is timezone-naive
@@ -122,10 +114,6 @@ def create_features(weather_df, weather_numeric_cols, soybean_df):
     data_df = pd.merge(soybean_df, weather_pca_df, on='date', how='inner')
 
     return data_df, weather_df
-
-# ================================
-# 4. Compute First Derivative (Log Returns) to Make Data Stationary
-# ================================
 
 def make_stationary(data_df):
     # Compute log returns
@@ -143,10 +131,6 @@ def make_stationary(data_df):
 
     return data_df
 
-# ================================
-# 5. Train Model on Log Returns
-# ================================
-
 def train(data_df):
 
     features = data_df.drop(['date', 'target_log_return'], axis=1)
@@ -156,17 +140,13 @@ def train(data_df):
     X_train, X_test = features.iloc[:split_index], features.iloc[split_index:]
     y_train, y_test = target.iloc[:split_index], target.iloc[split_index:]
 
-    model = XGBRegressor(objective='reg:squarederror', n_estimators=100, random_state=42)
+    model = XGBRegressor(objective='reg:squarederror', n_estimators=1000, random_state=42)
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 
     return y_pred, y_test, rmse
-
-# ================================
-# 6. Backtesting & Sharpe Ratio
-# ================================
 
 def backtest(y_pred, y_test):
 
@@ -178,10 +158,6 @@ def backtest(y_pred, y_test):
     cumulative_returns = np.cumprod(1 + strategy_returns)
 
     return sharpe_ratio, cumulative_returns
-
-# ================================
-# 7. Plot Backtest Performance
-# ================================
 
 if __name__ == "__main__":
 
